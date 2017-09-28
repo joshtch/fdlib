@@ -1,0 +1,8 @@
+# sources are published as is
+# (readme, changelog, packagejson are always included)
+*
+*/
+
+!docs/**/*
+!src/**/*
+!tests/**/*
