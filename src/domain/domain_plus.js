@@ -8,22 +8,13 @@
 // [5, 10] + [20, 30]
 // [5+20, 10+30] -> [25, 40]
 
-import {
-  SMALL_MAX_NUM,
-  SOLVED_FLAG,
-  SUP,
-
-  ASSERT,
-  ASSERT_NUMDOM,
-  ASSERT_NORDOM,
-  ASSERT_STRDOM,
-} from '../helpers';
+import { SMALL_MAX_NUM, SOLVED_FLAG, SUP } from '../constants';
+import { ASSERT, ASSERT_NUMDOM, ASSERT_NORDOM, ASSERT_STRDOM } from '../assert';
 import {
   EMPTY,
   EMPTY_STR,
   STR_RANGE_SIZE,
   STR_VALUE_SIZE,
-
   domain_str_closeGaps,
   domain_num_createRange,
   domain_str_decodeValue,
@@ -65,7 +56,8 @@ function domain_plus(domain1, domain2) {
     result = _domain_plusNumNumStr(domain1, domain2);
   } else {
     if (isNum1) result = _domain_plusNumStrStr(domain1, domain2);
-    else if (isNum2) result = _domain_plusNumStrStr(domain2, domain1); // swapped domains!
+    else if (isNum2) result = _domain_plusNumStrStr(domain2, domain1);
+    // swapped domains!
     else result = _domain_plusStrStrStr(domain1, domain2);
   }
 
@@ -83,7 +75,11 @@ function _domain_plusStrStrStr(domain1, domain2) {
   domain2 = domains[1];
 
   let newDomain = EMPTY_STR;
-  for (let index = 0, len = domain1.length; index < len; index += STR_RANGE_SIZE) {
+  for (
+    let index = 0, len = domain1.length;
+    index < len;
+    index += STR_RANGE_SIZE
+  ) {
     let lo = domain_str_decodeValue(domain1, index);
     let hi = domain_str_decodeValue(domain1, index + STR_VALUE_SIZE);
     newDomain += _domain_plusRangeStrStr(lo, hi, domain2);
@@ -120,7 +116,8 @@ function _domain_plusNumNumStr(domain1, domain2) {
   let newDomain = EMPTY_STR;
   while (flagValue <= domain1 && flagIndex <= SMALL_MAX_NUM) {
     if ((flagValue & domain1) > 0) {
-      if (hi !== flagIndex - 1) { // there's a gap so push prev range now
+      if (hi !== flagIndex - 1) {
+        // there's a gap so push prev range now
         newDomain += _domain_plusRangeNumStr(lo, hi, domain2);
         lo = flagIndex;
       }
@@ -136,7 +133,10 @@ function _domain_plusNumNumNum(domain1, domain2) {
   ASSERT_NUMDOM(domain1);
   ASSERT_NUMDOM(domain2);
   ASSERT(domain1 !== EMPTY && domain2 !== EMPTY, 'SHOULD_BE_CHECKED_ELSEWHERE');
-  ASSERT(domain_max(domain1) + domain_max(domain2) <= SMALL_MAX_NUM, 'THE_POINTE');
+  ASSERT(
+    domain_max(domain1) + domain_max(domain2) <= SMALL_MAX_NUM,
+    'THE_POINTE'
+  );
 
   if (domain1 >= SOLVED_FLAG) {
     let solvedValue = domain1 ^ SOLVED_FLAG;
@@ -155,7 +155,8 @@ function _domain_plusNumNumNum(domain1, domain2) {
   let newDomain = EMPTY;
   while (flagValue <= domain1 && flagIndex <= SMALL_MAX_NUM) {
     if ((flagValue & domain1) > 0) {
-      if (hi !== flagIndex - 1) { // there's a gap so push prev range now
+      if (hi !== flagIndex - 1) {
+        // there's a gap so push prev range now
         newDomain |= _domain_plusRangeNumNum(lo, hi, domain2);
         lo = flagIndex;
       }
@@ -188,7 +189,8 @@ function _domain_plusRangeNumNum(loi, hii, domain_num) {
   let newDomain = EMPTY;
   while (flagValue <= domain_num && flagIndex <= SMALL_MAX_NUM) {
     if ((flagValue & domain_num) > 0) {
-      if (hi !== flagIndex - 1) { // there's a gap so push prev range now
+      if (hi !== flagIndex - 1) {
+        // there's a gap so push prev range now
         newDomain |= _domain_plusRangeRangeNum(loi, hii, lo, hi);
         lo = flagIndex;
       }
@@ -221,7 +223,8 @@ function _domain_plusNumStrStr(domain_num, domain_str) {
   let newDomain = EMPTY_STR;
   while (flagValue <= domain_num && flagIndex <= SMALL_MAX_NUM) {
     if ((flagValue & domain_num) > 0) {
-      if (hi !== flagIndex - 1) { // there's a gap so push prev range now
+      if (hi !== flagIndex - 1) {
+        // there's a gap so push prev range now
         newDomain += _domain_plusRangeStrStr(lo, hi, domain_str);
         lo = flagIndex;
       }
@@ -253,7 +256,8 @@ function _domain_plusRangeNumStr(loi, hii, domain_num) {
   let newDomain = EMPTY_STR;
   while (flagValue <= domain_num && flagIndex <= SMALL_MAX_NUM) {
     if ((flagValue & domain_num) > 0) {
-      if (hi !== flagIndex - 1) { // there's a gap so push prev range now
+      if (hi !== flagIndex - 1) {
+        // there's a gap so push prev range now
         newDomain += _domain_plusRangeRangeStr(loi, hii, lo, hi);
         lo = flagIndex;
       }
@@ -269,7 +273,11 @@ function _domain_plusRangeStrStr(loi, hii, domain_str) {
   ASSERT_STRDOM(domain_str);
 
   let newDomain = EMPTY_STR;
-  for (let index = 0, len = domain_str.length; index < len; index += STR_RANGE_SIZE) {
+  for (
+    let index = 0, len = domain_str.length;
+    index < len;
+    index += STR_RANGE_SIZE
+  ) {
     let lo = domain_str_decodeValue(domain_str, index);
     let hi = domain_str_decodeValue(domain_str, index + STR_VALUE_SIZE);
     newDomain += _domain_plusRangeRangeStr(loi, hii, lo, hi);
@@ -279,7 +287,8 @@ function _domain_plusRangeStrStr(loi, hii, domain_str) {
 function _domain_plusRangeRangeStr(loi, hii, loj, hij) {
   ASSERT(loi + loj >= 0, 'DOMAINS_SHOULD_NOT_HAVE_NEGATIVES');
   let lo = loi + loj;
-  if (lo <= SUP) { // if lo exceeds SUP the resulting range is completely OOB and we ignore it.
+  if (lo <= SUP) {
+    // if lo exceeds SUP the resulting range is completely OOB and we ignore it.
     let hi = MIN(SUP, hii + hij);
     return domain_str_encodeRange(lo, hi);
   }
@@ -291,7 +300,10 @@ function _domain_plusRangeRangeNum(loi, hii, loj, hij) {
   ASSERT(hii + hij <= SMALL_MAX_NUM, 'RESULT_SHOULD_NOT_EXCEED_SMALL_DOMAIN');
 
   let domain = domain_num_createRange(loi + loj, hii + hij);
-  ASSERT(typeof domain === 'number' && domain < SOLVED_FLAG, 'expecting numdom, not soldom');
+  ASSERT(
+    typeof domain === 'number' && domain < SOLVED_FLAG,
+    'expecting numdom, not soldom'
+  );
   return domain;
 }
 

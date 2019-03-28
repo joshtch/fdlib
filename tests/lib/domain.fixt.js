@@ -1,4 +1,3 @@
-import expect from './mocha_proxy.fixt';
 import {
   domain__debug,
   domain_anyToSmallest,
@@ -25,9 +24,9 @@ function fixt_arrdom_range(lo, hi) {
   return [lo, hi];
 }
 function fixt_arrdom_ranges(...ranges) {
-  let arr = [];
-  ranges.forEach(function(range) {
-    if (!(range instanceof Array)) {
+  const arr = [];
+  ranges.forEach((range) => {
+    if (!(Array.isArray(range))) {
       throw new Error('Expecting each range to be an array');
     }
     if (range.length !== 2) {
@@ -158,7 +157,7 @@ function fixt_strdom_nums(...nums) {
   return s;
 }
 function fixt_bytes(str, desc) {
-  expect(typeof str, desc).to.eql('string');
+  expect(typeof str).toBe('string');
   return [].map.call(str, s => s.charCodeAt(0)).join(', ');
 }
 
@@ -181,7 +180,7 @@ function fixt_dom_ranges(...ranges) {
   return fixt_strdom_ranges(...ranges);
 }
 function fixt_dom_nums(...nums) {
-  if (nums[0] instanceof Array) throw new Error('you forgot to splat the argument');
+  if (Array.isArray(nums[0])) throw new Error('you forgot to splat the argument');
   nums.sort((a, b) => a - b);
   if (nums.length === 0) throw new Error('No nums? Probably test bug');
   if (nums.length === 1) return fixt_numdom_solved(nums[0]);
@@ -216,7 +215,7 @@ function ASSERT(b, d) {
 }
 
 function fixt_assertStrings(a, b, desc) {
-  expect(fixt_bytes(a, desc), desc).to.eql(fixt_bytes(b, desc));
+  expect(fixt_bytes(a, desc)).toEqual(fixt_bytes(b, desc));
 }
 
 /**
@@ -233,7 +232,7 @@ function fixt_assertStrings(a, b, desc) {
  */
 function fixt_domainEql(result, expectation, desc) {
   desc = `${desc || ''} comparing but ignoring representation; result: ${domain__debug(result)} expected: ${domain__debug(expectation)}`;
-  expect(domain_anyToSmallest(result), desc).to.eql(domain_anyToSmallest(expectation));
+  expect(domain_anyToSmallest(result)).toEqual(domain_anyToSmallest(expectation));
 }
 
 /**

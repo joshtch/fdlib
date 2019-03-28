@@ -2,12 +2,8 @@
 // It's specifically geared towards the use within fdq
 // Input strings are assumed to be limited to ascii 32-132
 
-import {
-  ASSERT,
-  THROW,
-} from './helpers';
-
-// BODY_START
+import { THROW } from './helpers';
+import { ASSERT } from './assert';
 
 const TRIE_ROOT_OFFSET = 0;
 const TRIE_BUCKET_COUNT = 10; // 10 digits
@@ -26,8 +22,9 @@ const TRIE_32_BIT = 32;
 const TRIE_64_BIT = 64;
 const TRIE_DEFAULT_BITS = undefined;
 
-
-// every trie node needs space for 10 jumps + 1 leaf value (must be capable of containing `size(Trie)-1`) so initially 11 bytes, later 12 bytes and then 22 bytes once the number of nodes exceeds 255
+// every trie node needs space for 10 jumps + 1 leaf value (must be capable of containing
+// `size(Trie)-1`) so initially 11 bytes, later 12 bytes and then 22 bytes once the number of
+// nodes exceeds 255
 
 /**
  * Create a new trie and, optionally, initialize it
@@ -38,11 +35,13 @@ const TRIE_DEFAULT_BITS = undefined;
  * @param {number} [initialLength] Hint to help control memory consumption for large/small tries. This length is in cells, not bytes. (byteLength=length*(bitsize/8))
  * @param {number} [initialBitsize] Hint to set bitsize explicitly. One of: 8 16 32 64
  * @returns {$trie}
+ *
+ * @nosideeffects
  */
 function trie_create(valuesByIndex, initialLength, initialBitsize) {
-  let size = (initialLength | 0) || TRIE_INITIAL_SIZE;
+  let size = initialLength | 0 || TRIE_INITIAL_SIZE;
   if (!size) THROW('fixme'); // blabla it's possible the constant is not yet initialized due to minification. dont initialize a trie in module global space
-  let bits = Math.max(trie_getValueBitsize(size), (initialBitsize | 0)); // given bitsize might be lower than max address, ignore it in that case
+  let bits = Math.max(trie_getValueBitsize(size), initialBitsize | 0); // given bitsize might be lower than max address, ignore it in that case
   let buf = trie_createBuffer(size, bits);
 
   // have to use a wrapper because the buffer ref may change when it grows
@@ -54,17 +53,20 @@ function trie_create(valuesByIndex, initialLength, initialBitsize) {
     bits: bits, // 8 16 32 (64?)
     lastNode: TRIE_ROOT_OFFSET, // pointer to last node in the buffer
     count: 0, // number of keys in the Trie
-
-    // __REMOVE_BELOW_FOR_DIST__
-    // debug stats... any use should be wrapped in ASSERT so that it's use gets removed in a dist
-    _mallocs: '' + buf.length, // malloc steps in a string
-    _adds: 0, // number of trie_add calls
-    _addSteps: 0, // sum of steps taken in all trie_add calls
-    _hass: 0, // number of trie_has calls
-    _gets: 0, // number of trie_get calls (and also contains has)
-    _getSteps: 0, // sum of steps for all gets on this trie
-    // __REMOVE_ABOVE_FOR_DIST__
   };
+
+  if (process.env.NODE_ENV !== 'production') {
+    trie = {
+      ...trie,
+      // debug stats... any use should be wrapped in ASSERT so that it's use gets removed in a dist
+      _mallocs: '' + buf.length, // malloc steps in a string
+      _adds: 0, // number of trie_add calls
+      _addSteps: 0, // sum of steps taken in all trie_add calls
+      _hass: 0, // number of trie_has calls
+      _gets: 0, // number of trie_get calls (and also contains has)
+      _getSteps: 0, // sum of steps for all gets on this trie
+    };
+  }
 
   if (valuesByIndex) {
     for (let i = 0, n = valuesByIndex.length; i < n; ++i) {
@@ -157,7 +159,7 @@ function trie_malloc(trie, size) {
 
   let nbuf = trie_createBuffer(size, trie.bits);
   nbuf.set(trie.buffer, 0);
-  ASSERT(trie._mallocs += ' ' + nbuf.length);
+  if (process.env.NODE_ENV !== 'production') ASSERT((trie._mallocs += ' ' + nbuf.length));
   trie.buffer = nbuf;
 }
 
@@ -194,9 +196,11 @@ function trie_getValueBitsize(value) {
  * @param {string} key
  * @param {number} value Any unsigned 32bit-1 value
  * @returns {number} previous value, or -1 if there wasn't any
+ *
+ * @sideeffects
  */
 function trie_add(trie, key, value) {
-  ASSERT(++trie._adds);
+  if (process.env.NODE_ENV !== 'production') ASSERT(++trie._adds);
   trie_ensureValueFits(trie, value);
   return _trie_add(trie, TRIE_ROOT_OFFSET, key, 0, key.length, value);
 }
@@ -215,7 +219,7 @@ function trie_add(trie, key, value) {
  * @returns {number} the old value, or not found
  */
 function _trie_add(trie, offset, key, index, len, value) {
-  ASSERT(++trie._addSteps);
+  if (process.env.NODE_ENV !== 'production') ASSERT(++trie._addSteps);
 
   ASSERT(offset >= 0, 'OFFSET_UNSIGNED');
   ASSERT(typeof key === 'string', 'STRING_KEY');
@@ -252,9 +256,11 @@ function _trie_add(trie, offset, key, index, len, value) {
  * @param {number} key Assumes an unsigned int
  * @param {number} value Any unsigned 32bit-1 value
  * @returns {number} previous value, or -1 if there wasn't any
+ *
+ * @sideeffects
  */
 function trie_addNum(trie, key, value) {
-  ASSERT(++trie._adds);
+  if (process.env.NODE_ENV !== 'production') ASSERT(++trie._adds);
   trie_ensureValueFits(trie, value);
   return _trie_addNum(trie, TRIE_ROOT_OFFSET, key + 1, value);
 }
@@ -271,7 +277,7 @@ function trie_addNum(trie, key, value) {
  * @returns {number} the old value, or not found
  */
 function _trie_addNum(trie, offset, key, value) {
-  ASSERT(++trie._addSteps);
+  if (process.env.NODE_ENV !== 'production') ASSERT(++trie._addSteps);
 
   ASSERT(offset >= 0, 'OFFSET_UNSIGNED');
   ASSERT(typeof key === 'number', 'NUMBER_KEY');
@@ -338,7 +344,7 @@ function _trie_pavePath(trie, offset, digit) {
  * @returns {number} -1 if not found, >= 0 otherwise
  */
 function trie_get(trie, key) {
-  ASSERT(++trie._gets);
+  if (process.env.NODE_ENV !== 'production') ASSERT(++trie._gets);
   return _trie_get(trie, TRIE_ROOT_OFFSET, key, 0, key.length);
 }
 /**
@@ -352,7 +358,7 @@ function trie_get(trie, key) {
  * @returns {number} -1 if not found or >= 0 otherwise
  */
 function _trie_get(trie, offset, key, index, len) {
-  ASSERT(++trie._getSteps);
+  if (process.env.NODE_ENV !== 'production') ASSERT(++trie._getSteps);
 
   ASSERT(offset >= 0, 'OFFSET_UNSIGNED');
   ASSERT(typeof key === 'string', 'STRING_KEY', key);
@@ -384,7 +390,7 @@ function _trie_get(trie, offset, key, index, len) {
  * @returns {boolean}
  */
 function trie_has(trie, key) {
-  ASSERT(++trie._hass);
+  if (process.env.NODE_ENV !== 'production') ASSERT(++trie._hass);
   return trie_get(trie, key) !== TRIE_KEY_NOT_FOUND;
 }
 
@@ -397,7 +403,7 @@ function trie_has(trie, key) {
  * @returns {number} -1 if not found, >= 0 otherwise
  */
 function trie_getNum(trie, key) {
-  ASSERT(++trie._gets);
+  if (process.env.NODE_ENV !== 'production') ASSERT(++trie._gets);
   return _trie_getNum(trie, TRIE_ROOT_OFFSET, key + 1);
 }
 /**
@@ -409,7 +415,7 @@ function trie_getNum(trie, key) {
  * @returns {number} -1 if not found or >= 0 otherwise
  */
 function _trie_getNum(trie, offset, key) {
-  ASSERT(++trie._getSteps);
+  if (process.env.NODE_ENV !== 'production') ASSERT(++trie._getSteps);
 
   ASSERT(offset >= 0, 'OFFSET_UNSIGNED');
   ASSERT(typeof key === 'number', 'NUMBER_KEY');
@@ -436,7 +442,7 @@ function _trie_getNum(trie, offset, key) {
  * @returns {boolean}
  */
 function trie_hasNum(trie, key) {
-  ASSERT(++trie._hass);
+  if (process.env.NODE_ENV !== 'production') ASSERT(++trie._hass);
   return trie_getNum(trie, key) !== TRIE_KEY_NOT_FOUND;
 }
 
@@ -446,6 +452,8 @@ function trie_hasNum(trie, key) {
  * @param {$trie} trie
  * @param {boolean} [skipBuffer=false]
  * @returns {string}
+ *
+ * @nosideeffects
  */
 function _trie_debug(trie, skipBuffer) {
   /* eslint no-extend-native: "off" */
@@ -475,7 +483,8 @@ function _trie_debug(trie, skipBuffer) {
   }
   // if one doesnt support them, they probably all dont.
   if (!Uint8Array.prototype.slice) {
-    Uint8Array.prototype.slice = Uint16Array.prototype.slice = Uint32Array.prototype.slice = Float64Array.prototype.slice = Array.prototype.slice;
+    Uint8Array.prototype.slice = Uint16Array.prototype.slice = Uint32Array.prototype.slice = Float64Array.prototype.slice =
+      Array.prototype.slice;
   }
 
   function bytes(b) {
@@ -490,37 +499,88 @@ function _trie_debug(trie, skipBuffer) {
 
   let pad = 20;
   let npad = 6;
-  let s = '' +
+  let s =
+    '' +
     '\n' +
     '###\n' +
-    'Key count:'.padEnd(pad, ' ') + trie.count + '\n' +
-    'Node count:'.padEnd(pad, ' ') + ((lastNode / TRIE_NODE_SIZE) + 1) + ' (' + (((lastNode / TRIE_NODE_SIZE) + 1) / trie.count) + ' nodes per key)\n' +
-    'Buffer cell length:'.padEnd(pad, ' ') + buf.length + '\n' +
-    'Buffer byte length:'.padEnd(pad, ' ') + buf.byteLength + '\n' +
-    'Bit size:'.padEnd(pad, ' ') + trie.bits + '\n' +
-    'Node len:'.padEnd(pad, ' ') + TRIE_NODE_SIZE + '\n' +
-    'Node size:'.padEnd(pad, ' ') + TRIE_NODE_SIZE + '\n' +
-    'Last Node:'.padEnd(pad, ' ') + lastNode + '\n' +
-    'Used space:'.padEnd(pad, ' ') + (lastNode + TRIE_NODE_SIZE) + ' cells, ' + bytes((lastNode + TRIE_NODE_SIZE) * (trie.bits >> 3)) + '\n' +
-    'Unused space:'.padEnd(pad, ' ') + (buf.length - (lastNode + TRIE_NODE_SIZE)) + ' cells, ' + bytes((buf.length - (lastNode + TRIE_NODE_SIZE)) * (trie.bits >> 3)) + '\n' +
-
-    // __REMOVE_BELOW_FOR_DIST__
-    'Mallocs:'.padEnd(pad, ' ') + trie._mallocs + '\n' +
-    'trie_adds:'.padEnd(pad, ' ') + trie._adds + '\n' +
-    'Avg key distance:'.padEnd(pad, ' ') + (trie._addSteps / trie._adds) + '\n' +
-    'trie_hass:'.padEnd(pad, ' ') + trie._hass + '\n' +
-    'trie_gets:'.padEnd(pad, ' ') + trie._gets + '\n' +
-    'Avg get distance:'.padEnd(pad, ' ') + trie._getSteps + ' -> ' + (trie._getSteps / trie._gets) + '\n' +
-    // __REMOVE_ABOVE_FOR_DIST__
-
+    'Key count:'.padEnd(pad, ' ') +
+    trie.count +
+    '\n' +
+    'Node count:'.padEnd(pad, ' ') +
+    (lastNode / TRIE_NODE_SIZE + 1) +
+    ' (' +
+    (lastNode / TRIE_NODE_SIZE + 1) / trie.count +
+    ' nodes per key)\n' +
+    'Buffer cell length:'.padEnd(pad, ' ') +
+    buf.length +
+    '\n' +
+    'Buffer byte length:'.padEnd(pad, ' ') +
+    buf.byteLength +
+    '\n' +
+    'Bit size:'.padEnd(pad, ' ') +
+    trie.bits +
+    '\n' +
+    'Node len:'.padEnd(pad, ' ') +
+    TRIE_NODE_SIZE +
+    '\n' +
+    'Node size:'.padEnd(pad, ' ') +
+    TRIE_NODE_SIZE +
+    '\n' +
+    'Last Node:'.padEnd(pad, ' ') +
+    lastNode +
+    '\n' +
+    'Used space:'.padEnd(pad, ' ') +
+    (lastNode + TRIE_NODE_SIZE) +
+    ' cells, ' +
+    bytes((lastNode + TRIE_NODE_SIZE) * (trie.bits >> 3)) +
+    '\n' +
+    'Unused space:'.padEnd(pad, ' ') +
+    (buf.length - (lastNode + TRIE_NODE_SIZE)) +
+    ' cells, ' +
+    bytes((buf.length - (lastNode + TRIE_NODE_SIZE)) * (trie.bits >> 3)) +
     '\n';
 
+  if (process.env.NODE_ENV !== 'production') {
+    s +=
+      'Mallocs:'.padEnd(pad, ' ') +
+      trie._mallocs +
+      '\n' +
+      'trie_adds:'.padEnd(pad, ' ') +
+      trie._adds +
+      '\n' +
+      'Avg key distance:'.padEnd(pad, ' ') +
+      trie._addSteps / trie._adds +
+      '\n' +
+      'trie_hass:'.padEnd(pad, ' ') +
+      trie._hass +
+      '\n' +
+      'trie_gets:'.padEnd(pad, ' ') +
+      trie._gets +
+      '\n' +
+      'Avg get distance:'.padEnd(pad, ' ') +
+      trie._getSteps +
+      ' -> ' +
+      trie._getSteps / trie._gets +
+      '\n';
+  }
+
+  s += '\n';
+
   if (!skipBuffer) {
-    s += 'ptr \\ key= 0      1      2      3      4      5      6      7      8      9  ->  value\n\n';
+    s +=
+      'ptr \\ key= 0      1      2      3      4      5      6      7      8      9  ->  value\n\n';
 
     let ptr = TRIE_ROOT_OFFSET;
     while (ptr <= lastNode) {
-      s += String(ptr).padStart(npad, ' ') + ': ' + Array.from(buf.slice(ptr, ptr + TRIE_NODE_SIZE - 1)).map(n => String(n).padStart(npad, ' ')).join(', ') + '  ->  ' + String(buf[ptr + TRIE_NODE_SIZE - 1]).padStart(npad, ' ') + '\n';
+      s +=
+        String(ptr).padStart(npad, ' ') +
+        ': ' +
+        Array.from(buf.slice(ptr, ptr + TRIE_NODE_SIZE - 1))
+          .map(n => String(n).padStart(npad, ' '))
+          .join(', ') +
+        '  ->  ' +
+        String(buf[ptr + TRIE_NODE_SIZE - 1]).padStart(npad, ' ') +
+        '\n';
       ptr += TRIE_NODE_SIZE;
     }
   }
@@ -529,8 +589,6 @@ function _trie_debug(trie, skipBuffer) {
 
   return s;
 }
-
-// BODY_STOP
 
 export {
   TRIE_8_BIT,
@@ -544,7 +602,6 @@ export {
   TRIE_MINIMAL_GROWTH,
   TRIE_NODE_SIZE,
   TRIE_EMPTY,
-
   trie_add,
   trie_addNum,
   trie_create,

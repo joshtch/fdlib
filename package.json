@@ -1,46 +1,63 @@
 {
   "name": "fdlib",
-  "main": "helpers.js",
+  "version": "0.1.1",
   "description": "Shared library files for the fdq package",
+  "main": "lib/index.js",
+  "unpkg": "dist/fdlib.min.js",
+  "module": "es/index.js",
   "license": "MIT",
-  "version": "0.0.1",
+  "files": [
+    "es",
+    "lib",
+    "dist",
+    "src"
+  ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/qfox/fdlib.git"
+    "url": "git://github.com/joshtch/fdlib.git"
   },
   "scripts": {
-    "install": "bin/create-git-hooks.sh",
-    "test": "bin/lint.prod.sh && bin/mocha.sh",
-    "prepublishOnly": "grunt test",
-    "lint": "bin/lint.prod.sh",
-    "lintdev": "bin/lint.dev.sh",
-    "lintfix": "bin/lint.fix.sh",
-    "mocha": "bin/mocha.sh",
-    "coverage": "bin/coverage.sh"
-  },
-  "babel": {
-    "presets": [
-      "es2015"
-    ],
-    "sourceMap": true
+    "build": "run-s clean && run-p build:**",
+    "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --out-dir lib",
+    "build:esm": "cross-env BABEL_ENV=esm babel src --out-dir es",
+    "build:umd": "rollup -c && es-check es5 dist/fdlib.min.js",
+    "clean": "rimraf cache coverage dist es lib",
+    "coverage": "jest --verbose --coverage && open ./coverage/lcov-report/index.html",
+    "format": "prettier --write \"**/*.{js,md}\"",
+    "format:check": "prettier --list-different \"**/*.{js,md}\"",
+    "lint": "xo",
+    "prepublishOnly": "run-s build",
+    "test": "jest --verbose --coverage",
+    "test:update": "jest --verbose --coverage --updateSnapshot",
+    "test:watch": "jest --verbose --watch",
+    "test:watch1": "jest --verbose --watch --bail 1"
   },
   "devDependencies": {
-    "babel-cli": "*",
-    "babel-core": "*",
-    "babel-eslint": "*",
-    "babel-polyfill": "*",
-    "babel-preset-es2015": "*",
-    "chai": "*",
-    "eslint": "*",
-    "grunt": "*",
-    "grunt-cli": "*",
-    "grunt-contrib-watch": "*",
-    "grunt-mocha-test": "*",
-    "grunt-remove": "*",
-    "grunt-run": "*",
-    "istanbul": "^1.0.0-alpha.2",
-    "isparta": "*",
-    "mocha": "*"
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
+    "@babel/node": "^7.0.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "babel-jest": "^24.0.0",
+    "cross-env": "^5.0.0",
+    "es-check": "^5.0.0",
+    "eslint": "^5.0.0",
+    "eslint-config-jest-files": "^0.1.3",
+    "eslint-config-unicorn-camelcase": "^0.1.1",
+    "eslint-plugin-prettier": "^3.0.1",
+    "husky": "^1.3.1",
+    "jest": "^24.0.0",
+    "lint-staged": "^8.0.0",
+    "npm-run-all": "^4.0.0",
+    "prettier": "^1.0.0",
+    "rimraf": "^2.0.0",
+    "rollup": "^1.7.4",
+    "rollup-plugin-babel": "^4.0.0",
+    "rollup-plugin-commonjs": "^9.0.0",
+    "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-replace": "^2.0.0",
+    "rollup-plugin-terser": "^4.0.0",
+    "xo": "^0.24.0"
   },
   "keywords": [
     "constraint solving",
@@ -48,5 +65,48 @@
     "finite domain solver",
     "FD",
     "Solving"
-  ]
+  ],
+  "husky": {
+    "pre-commit": "lint-staged"
+  },
+  "jest": {
+    "silent": true,
+    "cacheDirectory": "./cache",
+    "coveragePathIgnorePatterns": [],
+    "coverageThreshold": {
+      "global": {
+        "statements": 80
+      }
+    },
+    "transformIgnorePatterns": [
+      "^<rootDir>/node_modules/(?!(fdv|fdh)/).+\\.js$"
+    ]
+  },
+  "lint-staged": {
+    "*.{js,md}": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "prettier": {
+    "singleQuote": true,
+    "bracketSpacing": true,
+    "trailingComma": "es5"
+  },
+  "xo": {
+    "prettier": true,
+    "space": true,
+    "extends": [
+      "unicorn-camelcase",
+      "jest-files"
+    ],
+    "ignores": [
+      "cache",
+      "coverage",
+      "dist",
+      "es",
+      "lib",
+      "rollup.config.js"
+    ]
+  }
 }
