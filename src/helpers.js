@@ -4,11 +4,11 @@ const INSPECT =
   typeof require === 'function'
     ? function(arg) {
         return require('util')
-          .inspect(arg, false, null)
+          .inspect(arg, { showHidden: false, depth: 100 })
           .replace(/\n ?/g, ' ');
       }
     : function(o) {
-        return o;
+        return `${o}`;
       };
 
 let TERM = console;
@@ -45,10 +45,4 @@ function THROW(...msg) {
   throw new Error(msg.join(': '));
 }
 
-export {
-  INSPECT,
-  SUSH,
-  THROW,
-  getTerm,
-  setTerm,
-};
+export { INSPECT, SUSH, THROW, getTerm, setTerm };

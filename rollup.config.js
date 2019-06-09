@@ -1,6 +1,6 @@
+import babel from 'rollup-plugin-babel';
 import commonjs from 'rollup-plugin-commonjs';
 import nodeResolve from 'rollup-plugin-node-resolve';
-import babel from 'rollup-plugin-babel';
 import replace from 'rollup-plugin-replace';
 import { terser } from 'rollup-plugin-terser';
 
@@ -11,8 +11,13 @@ export default [
     output: {
       file: 'dist/fdlib.js',
       format: 'umd',
-      name: 'fdlib',
+      name: 'FDLib',
       indent: false,
+      sourceMap: true,
+    },
+    treeshake: {
+      moduleSideEffects: false,
+      propertyReadSideEffects: false
     },
     plugins: [
       nodeResolve(),
@@ -28,8 +33,12 @@ export default [
     output: {
       file: 'dist/fdlib.min.js',
       format: 'umd',
-      name: 'fdlib',
+      name: 'FDLib',
       indent: false,
+    },
+    treeshake: {
+      moduleSideEffects: false,
+      propertyReadSideEffects: false
     },
     plugins: [
       nodeResolve(),
@@ -39,6 +48,24 @@ export default [
       terser({
         compress: {
           pure_funcs: [
+            // assert
+            'ASSERT',
+            'ASSERT_ANYDOM',
+            'ASSERT_ARRDOM',
+            'ASSERT_BITDOM',
+            'ASSERT_LOG',
+            'ASSERT_NORDOM',
+            'ASSERT_NUMDOM',
+            'ASSERT_SET_LOG',
+            'ASSERT_SOLDOM',
+            'ASSERT_STRDOM',
+            'ASSERT_VARDOMS_SLOW',
+            'TRACE',
+            'TRACE_MORPH',
+            'TRACE_SILENT',
+            'isTracing',
+            'setTracing',
+
             // domain_lib
             'domain_arr_max',
             'domain_arrToStr',
@@ -131,7 +158,7 @@ export default [
           ],
           pure_getters: true,
           unsafe: true,
-          unsafe_comps: false,
+          unsafe_comps: false, // TODO: things break when this is true
           warnings: false,
         },
       }),

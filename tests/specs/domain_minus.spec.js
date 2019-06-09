@@ -9,7 +9,7 @@ import {
 
 import { SMALL_MAX_NUM } from '../../src/constants';
 import { domain__debug } from '../../src/domain';
-import domain_minus from '../../src/domain/domain_minus';
+import { domain_minus } from '../../src/domain/domain_minus';
 
 describe('src/minus.spec.js', () => {
   // this.timeout(60000); // takes long under istanbul / even longer under travis

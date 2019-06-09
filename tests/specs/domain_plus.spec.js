@@ -11,7 +11,7 @@ import {
 
 import { SUP } from '../../src/constants';
 import { domain__debug, domain_createValue } from '../../src/domain';
-import domain_plus from '../../src/domain/domain_plus';
+import { domain_plus } from '../../src/domain/domain_plus';
 
 describe('src/plus.spec.js', () => {
   // this.timeout(60000); // takes long under istanbul / even longer under travis

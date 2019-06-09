@@ -10,7 +10,7 @@ function ASSERT(bool, msg = '', ...args) {
       return;
     }
 
-    if (!msg) msg = '(no desc)'; //msg = new Error('trace').stack;
+    if (!msg) msg = '(no desc)'; // Msg = new Error('trace').stack;
 
     const TERM = getTerm();
 
@@ -31,9 +31,10 @@ function ASSERT(bool, msg = '', ...args) {
 }
 
 function _stringify(o) {
-  if (o instanceof Array) {
+  if (Array.isArray(o)) {
     return `[ ${o.map(_stringify).join(', ')} ]`;
   }
+
   return `${o}`;
 }
 
@@ -90,7 +91,7 @@ function ASSERT_BITDOM(domain) {
 
 function ASSERT_ARRDOM(domain, min, max) {
   if (process.env.NODE_ENV !== 'production') {
-    ASSERT(domain instanceof Array, 'ONLY_ARRDOM');
+    ASSERT(Array.isArray(domain), 'ONLY_ARRDOM');
     if (domain.length === 0) return;
     ASSERT(domain.length % 2 === 0, 'SHOULD_CONTAIN_RANGES');
     ASSERT(domain[0] >= (min || SUB), 'SHOULD_BE_GTE ' + (min || SUB));
@@ -117,14 +118,20 @@ function ASSERT_NORDOM(domain, expectSmallest, domain__debug) {
         const hi =
           (domain.charCodeAt(domain.length - 2) << 16) |
           domain.charCodeAt(domain.length - 1);
-        ASSERT(hi > SMALL_MAX_NUM, 'EXPECTING_STRDOM_TO_HAVE_NUMS_GT_BITDOM', s);
+        ASSERT(
+          hi > SMALL_MAX_NUM,
+          'EXPECTING_STRDOM_TO_HAVE_NUMS_GT_BITDOM',
+          s
+        );
         ASSERT(
           domain.length > 4 || lo !== hi,
           'EXPECTING_STRDOM_NOT_TO_BE_SOLVED'
         );
       }
+
       return ASSERT_STRDOM(domain, undefined, undefined, s);
     }
+
     if (expectSmallest)
       ASSERT(
         !domain || domain >= SOLVED_FLAG || (domain & (domain - 1)) !== 0,
@@ -157,7 +164,7 @@ function ASSERT_ANYDOM(domain) {
     ASSERT(
       typeof domain === 'string' ||
         typeof domain === 'number' ||
-        domain instanceof Array,
+        Array.isArray(domain),
       'ONLY_VALID_DOM_TYPE'
     );
   }
@@ -183,8 +190,8 @@ const LOG_FLAG_CHOICE = 2;
 const LOG_FLAG_SEARCH = 4;
 const LOG_FLAG_SOLUTIONS = 8;
 
-let LOG_FLAGS = LOG_FLAG_NONE; //LOG_FLAG_PROPSTEPS|LOG_FLAG_CHOICE|LOG_FLAG_SOLUTIONS|LOG_FLAG_SEARCH;
-//let LOG_FLAGS = LOG_FLAG_PROPSTEPS|LOG_FLAG_CHOICE|LOG_FLAG_SOLUTIONS|LOG_FLAG_SEARCH;
+let LOG_FLAGS = LOG_FLAG_NONE; // LOG_FLAG_PROPSTEPS|LOG_FLAG_CHOICE|LOG_FLAG_SOLUTIONS|LOG_FLAG_SEARCH;
+// let LOG_FLAGS = LOG_FLAG_PROPSTEPS|LOG_FLAG_CHOICE|LOG_FLAG_SOLUTIONS|LOG_FLAG_SEARCH;
 function ASSERT_SET_LOG(level) {
   if (process.env.NODE_ENV !== 'production') {
     LOG_FLAGS = level;
@@ -240,7 +247,7 @@ function TRACE_MORPH(from, to, desc, names, indexes) {
 
 function TRACE_SILENT(...args) {
   if (process.env.NODE_ENV !== 'production') {
-    TRACE('\x1b[90m', ...args, '\x1b[0m');
+    TRACE('\u001B[90m', ...args, '\u001B[0m');
   }
 }
 
@@ -254,10 +261,8 @@ export {
   ASSERT_SOLDOM,
   ASSERT_STRDOM,
   ASSERT_VARDOMS_SLOW,
-
   ASSERT_LOG,
   ASSERT_SET_LOG,
-
   LOG_FLAG_CHOICE,
   LOG_FLAG_NONE,
   LOG_FLAG_PROPSTEPS,
@@ -268,7 +273,6 @@ export {
   LOG_NONE,
   LOG_SOLVES,
   LOG_STATS,
-
   TRACE,
   TRACE_MORPH,
   TRACE_SILENT,

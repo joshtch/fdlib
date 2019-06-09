@@ -7,7 +7,7 @@ import { ASSERT } from './assert';
 
 const TRIE_ROOT_OFFSET = 0;
 const TRIE_BUCKET_COUNT = 10; // 10 digits
-const TRIE_NODE_SIZE = TRIE_BUCKET_COUNT + 1; // inc value
+const TRIE_NODE_SIZE = TRIE_BUCKET_COUNT + 1; // Inc value
 
 const TRIE_INITIAL_SIZE = 16 * 1024;
 const TRIE_MINIMAL_GROWTH = 4 * 1024;
@@ -22,7 +22,7 @@ const TRIE_32_BIT = 32;
 const TRIE_64_BIT = 64;
 const TRIE_DEFAULT_BITS = undefined;
 
-// every trie node needs space for 10 jumps + 1 leaf value (must be capable of containing
+// Every trie node needs space for 10 jumps + 1 leaf value (must be capable of containing
 // `size(Trie)-1`) so initially 11 bytes, later 12 bytes and then 22 bytes once the number of
 // nodes exceeds 255
 
@@ -39,32 +39,32 @@ const TRIE_DEFAULT_BITS = undefined;
  * @nosideeffects
  */
 function trie_create(valuesByIndex, initialLength, initialBitsize) {
-  let size = initialLength | 0 || TRIE_INITIAL_SIZE;
-  if (!size) THROW('fixme'); // blabla it's possible the constant is not yet initialized due to minification. dont initialize a trie in module global space
-  let bits = Math.max(trie_getValueBitsize(size), initialBitsize | 0); // given bitsize might be lower than max address, ignore it in that case
-  let buf = trie_createBuffer(size, bits);
+  const size = initialLength | 0 || TRIE_INITIAL_SIZE;
+  if (!size) THROW('fixme'); // Blabla it's possible the constant is not yet initialized due to minification. dont initialize a trie in module global space
+  const bits = Math.max(trie_getValueBitsize(size), initialBitsize | 0); // Given bitsize might be lower than max address, ignore it in that case
+  const buffer = trie_createBuffer(size, bits);
 
-  // have to use a wrapper because the buffer ref may change when it grows
+  // Have to use a wrapper because the buffer ref may change when it grows
   // otherwise we could just store the meta data inside the buffer. but at
   // least this is easier to read :)
   let trie = {
     _class: '$trie',
-    buffer: buf,
-    bits: bits, // 8 16 32 (64?)
-    lastNode: TRIE_ROOT_OFFSET, // pointer to last node in the buffer
-    count: 0, // number of keys in the Trie
+    buffer,
+    bits, // 8 16 32 (64?)
+    lastNode: TRIE_ROOT_OFFSET, // Pointer to last node in the buffer
+    count: 0, // Number of keys in the Trie
   };
 
   if (process.env.NODE_ENV !== 'production') {
     trie = {
       ...trie,
-      // debug stats... any use should be wrapped in ASSERT so that it's use gets removed in a dist
-      _mallocs: '' + buf.length, // malloc steps in a string
-      _adds: 0, // number of trie_add calls
-      _addSteps: 0, // sum of steps taken in all trie_add calls
-      _hass: 0, // number of trie_has calls
-      _gets: 0, // number of trie_get calls (and also contains has)
-      _getSteps: 0, // sum of steps for all gets on this trie
+      // Debug stats... any use should be wrapped in ASSERT so that it's use gets removed in a dist
+      _mallocs: String(buffer.length), // Malloc steps in a string
+      _adds: 0, // Number of trie_add calls
+      _addSteps: 0, // Sum of steps taken in all trie_add calls
+      _hass: 0, // Number of trie_has calls
+      _gets: 0, // Number of trie_get calls (and also contains has)
+      _getSteps: 0, // Sum of steps for all gets on this trie
     };
   }
 
@@ -93,9 +93,10 @@ function trie_createBuffer(size, bits) {
     case TRIE_32_BIT:
       return new Uint32Array(size);
     case TRIE_64_BIT:
-      return new Float64Array(size); // let's hope not ;)
+      return new Float64Array(size); // Let's hope not ;)
+    default:
+      THROW('Unsupported bit size');
   }
-  THROW('Unsupported bit size');
 }
 
 /**
@@ -112,9 +113,9 @@ function trie_createBuffer(size, bits) {
  * @returns {Uint16Array}
  */
 function trie_addNode(trie) {
-  let newNodePtr = trie.lastNode + TRIE_NODE_SIZE;
+  const newNodePtr = trie.lastNode + TRIE_NODE_SIZE;
   trie.lastNode = newNodePtr;
-  // technically the `while` is valid (instead of an `if`) but only
+  // Technically the `while` is valid (instead of an `if`) but only
   // if the buffer could grow by a smaller amount than the node size...
   // note: buffer.length is cell size, buffer.byteLength is byte size. we want cells here.
   while (newNodePtr + TRIE_NODE_SIZE >= trie.buffer.length) trie_grow(trie);
@@ -133,8 +134,8 @@ function trie_addNode(trie) {
  * @param {$trie} trie
  */
 function trie_grow(trie) {
-  let len = trie.buffer.length; // cell size! not byte size.
-  let newSize = ~~(len * 1.1); // grow by 10% (an arbitrary number)
+  const len = trie.buffer.length; // Cell size! not byte size.
+  let newSize = ~~(len * 1.1); // Grow by 10% (an arbitrary number)
   if (len + TRIE_MINIMAL_GROWTH > newSize) newSize = TRIE_MINIMAL_GROWTH + len;
 
   trie_malloc(trie, newSize);
@@ -150,16 +151,17 @@ function trie_grow(trie) {
  * @param {number} size Cell size, not byte size
  */
 function trie_malloc(trie, size) {
-  // make sure addressing fits
-  let newBits = trie_getValueBitsize(size);
+  // Make sure addressing fits
+  const newBits = trie_getValueBitsize(size);
 
-  // dont shrink bit size even if length would allow it; "large" _values_ may require it
+  // Dont shrink bit size even if length would allow it; "large" _values_ may require it
   // (our tries dont need to shrink)
   trie.bits = Math.max(trie.bits, newBits);
 
-  let nbuf = trie_createBuffer(size, trie.bits);
+  const nbuf = trie_createBuffer(size, trie.bits);
   nbuf.set(trie.buffer, 0);
-  if (process.env.NODE_ENV !== 'production') ASSERT((trie._mallocs += ' ' + nbuf.length));
+  if (process.env.NODE_ENV !== 'production')
+    ASSERT((trie._mallocs += ' ' + nbuf.length));
   trie.buffer = nbuf;
 }
 
@@ -174,9 +176,9 @@ function trie_malloc(trie, size) {
  */
 function trie_getValueBitsize(value) {
   if (value < 0x100) return TRIE_8_BIT;
-  else if (value < 0x10000) return TRIE_16_BIT;
-  else if (value < 0x100000000) return TRIE_32_BIT;
-  else return TRIE_64_BIT;
+  if (value < 0x10000) return TRIE_16_BIT;
+  if (value < 0x100000000) return TRIE_32_BIT;
+  return TRIE_64_BIT;
 }
 
 /**
@@ -204,6 +206,7 @@ function trie_add(trie, key, value) {
   trie_ensureValueFits(trie, value);
   return _trie_add(trie, TRIE_ROOT_OFFSET, key, 0, key.length, value);
 }
+
 /**
  * Recursively find the place to add the key. If
  * the trail runs cold, pave it. Clobbers existing
@@ -227,17 +230,17 @@ function _trie_add(trie, offset, key, index, len, value) {
   ASSERT(key.length === len, 'KEY_LEN');
   ASSERT(value >= 0, 'VALUE_UNSIGNED');
 
-  // dont create next path part if it would create a leaf node
+  // Dont create next path part if it would create a leaf node
   if (index >= len) {
-    let buf = trie.buffer;
-    let valuePtr = offset + TRIE_BUCKET_COUNT;
-    let curValue = trie.buffer[valuePtr];
+    const { buffer } = trie;
+    const valuePtr = offset + TRIE_BUCKET_COUNT;
+    const curValue = trie.buffer[valuePtr];
     if (!curValue) ++trie.count;
-    buf[valuePtr] = value + 1; // 0 is reserved to mean "unused"
+    buffer[valuePtr] = value + 1; // 0 is reserved to mean "unused"
     return curValue - 1;
   }
 
-  let c = key.charCodeAt(index) - 32; // allow all asciis 31 < c < 130 encoded as stringified double digits
+  const c = key.charCodeAt(index) - 32; // Allow all asciis 31 < c < 130 encoded as stringified double digits
 
   offset = _trie_pavePath(trie, offset, c % 10);
   offset = _trie_pavePath(trie, offset, Math.floor(c / 10));
@@ -264,6 +267,7 @@ function trie_addNum(trie, key, value) {
   trie_ensureValueFits(trie, value);
   return _trie_addNum(trie, TRIE_ROOT_OFFSET, key + 1, value);
 }
+
 /**
  * Recursively find the place to add the key. If
  * the trail runs cold, pave it. Clobbers existing
@@ -284,11 +288,11 @@ function _trie_addNum(trie, offset, key, value) {
   ASSERT(value >= 0, 'VALUE_UNSIGNED');
 
   if (key === 0) {
-    let buf = trie.buffer;
-    let valuePtr = offset + TRIE_BUCKET_COUNT;
-    let curValue = trie.buffer[valuePtr];
+    const { buffer } = trie;
+    const valuePtr = offset + TRIE_BUCKET_COUNT;
+    const curValue = trie.buffer[valuePtr];
     if (!curValue) ++trie.count;
-    buf[valuePtr] = value + 1; // 0 is reserved to mean "unused"
+    buffer[valuePtr] = value + 1; // 0 is reserved to mean "unused"
     return curValue - 1;
   }
 
@@ -307,10 +311,10 @@ function _trie_addNum(trie, offset, key, value) {
  * @param {number} value
  */
 function trie_ensureValueFits(trie, value) {
-  let bitsNeeded = trie_getValueBitsize(value);
+  const bitsNeeded = trie_getValueBitsize(value);
   if (bitsNeeded > trie.bits) {
     trie.bits = bitsNeeded;
-    trie_malloc(trie, trie.buffer.length); // note: length = cell size, byteLength = byte size. we mean cell here.
+    trie_malloc(trie, trie.buffer.length); // Note: length = cell size, byteLength = byte size. we mean cell here.
   }
 }
 
@@ -333,6 +337,7 @@ function _trie_pavePath(trie, offset, digit) {
     ptr = trie_addNode(trie);
     trie.buffer[offset] = ptr;
   }
+
   return ptr;
 }
 
@@ -347,6 +352,7 @@ function trie_get(trie, key) {
   if (process.env.NODE_ENV !== 'production') ASSERT(++trie._gets);
   return _trie_get(trie, TRIE_ROOT_OFFSET, key, 0, key.length);
 }
+
 /**
  * Recursive function to search for key
  *
@@ -365,23 +371,24 @@ function _trie_get(trie, offset, key, index, len) {
   ASSERT(index >= 0, 'INDEX_UNSIGNED');
   ASSERT(key.length === len, 'KEY_LEN', key);
 
-  let buf = trie.buffer;
+  const { buffer } = trie;
 
   if (index >= len) {
-    let valuePtr = offset + TRIE_BUCKET_COUNT;
-    return buf[valuePtr] - 1;
+    const valuePtr = offset + TRIE_BUCKET_COUNT;
+    return buffer[valuePtr] - 1;
   }
 
-  let c = key.charCodeAt(index) - 32; // allow all asciis 31 < c < 130 encoded as stringified double digits
+  const c = key.charCodeAt(index) - 32; // Allow all asciis 31 < c < 130 encoded as stringified double digits
 
-  offset = buf[offset + (c % 10)];
+  offset = buffer[offset + (c % 10)];
   if (!offset) return TRIE_KEY_NOT_FOUND;
 
-  offset = buf[offset + Math.floor(c / 10)];
+  offset = buffer[offset + Math.floor(c / 10)];
   if (!offset) return TRIE_KEY_NOT_FOUND;
 
   return _trie_get(trie, offset, key, index + 1, len);
 }
+
 /**
  * See trie_get for more details
  *
@@ -406,6 +413,7 @@ function trie_getNum(trie, key) {
   if (process.env.NODE_ENV !== 'production') ASSERT(++trie._gets);
   return _trie_getNum(trie, TRIE_ROOT_OFFSET, key + 1);
 }
+
 /**
  * Recursive function to search for number key
  *
@@ -420,20 +428,21 @@ function _trie_getNum(trie, offset, key) {
   ASSERT(offset >= 0, 'OFFSET_UNSIGNED');
   ASSERT(typeof key === 'number', 'NUMBER_KEY');
 
-  let buf = trie.buffer;
+  const { buffer } = trie;
 
   if (key === 0) {
-    let valuePtr = offset + TRIE_BUCKET_COUNT;
-    return buf[valuePtr] - 1;
+    const valuePtr = offset + TRIE_BUCKET_COUNT;
+    return buffer[valuePtr] - 1;
   }
 
-  offset = buf[offset + (key % 10)];
+  offset = buffer[offset + (key % 10)];
   if (!offset) return TRIE_KEY_NOT_FOUND;
 
   key = Math.floor(key / 10);
 
   return _trie_getNum(trie, offset, key);
 }
+
 /**
  * See trie_getNum for more details
  *
@@ -457,11 +466,11 @@ function trie_hasNum(trie, key) {
  */
 function _trie_debug(trie, skipBuffer) {
   /* eslint no-extend-native: "off" */
-  let buf = trie.buffer;
+  const { buffer } = trie;
 
-  let lastNode = trie.lastNode;
+  const { lastNode } = trie;
 
-  // patch some es6 stuff for debugging. note: dont do this in prod, it may slow stuff down.
+  // Patch some es6 stuff for debugging. note: dont do this in prod, it may slow stuff down.
   if (!String.prototype.padStart) {
     String.prototype.padStart = function(n, c) {
       let s = this;
@@ -469,22 +478,27 @@ function _trie_debug(trie, skipBuffer) {
       return s;
     };
   }
+
   if (!String.prototype.padEnd) {
     String.prototype.padEnd = function(n, c) {
       let s = this;
-      if (this.length < n) for (let i = 0; i < n - this.length; ++i) s = s + c;
+      if (this.length < n) for (let i = 0; i < n - this.length; ++i) s += c;
       return s;
     };
   }
+
   if (!Array.from) {
     Array.from = function(a) {
       return [].concat.call(a);
     };
   }
-  // if one doesnt support them, they probably all dont.
+
+  // If one doesnt support them, they probably all dont.
   if (!Uint8Array.prototype.slice) {
-    Uint8Array.prototype.slice = Uint16Array.prototype.slice = Uint32Array.prototype.slice = Float64Array.prototype.slice =
-      Array.prototype.slice;
+    Uint8Array.prototype.slice = Array.prototype.slice;
+    Uint16Array.prototype.slice = Array.prototype.slice;
+    Uint32Array.prototype.slice = Array.prototype.slice;
+    Float64Array.prototype.slice = Array.prototype.slice;
   }
 
   function bytes(b) {
@@ -497,8 +511,8 @@ function _trie_debug(trie, skipBuffer) {
     return ~~(b * 100) / 100 + ' gb';
   }
 
-  let pad = 20;
-  let npad = 6;
+  const pad = 20;
+  const npad = 6;
   let s =
     '' +
     '\n' +
@@ -512,10 +526,10 @@ function _trie_debug(trie, skipBuffer) {
     (lastNode / TRIE_NODE_SIZE + 1) / trie.count +
     ' nodes per key)\n' +
     'Buffer cell length:'.padEnd(pad, ' ') +
-    buf.length +
+    buffer.length +
     '\n' +
     'Buffer byte length:'.padEnd(pad, ' ') +
-    buf.byteLength +
+    buffer.byteLength +
     '\n' +
     'Bit size:'.padEnd(pad, ' ') +
     trie.bits +
@@ -535,9 +549,9 @@ function _trie_debug(trie, skipBuffer) {
     bytes((lastNode + TRIE_NODE_SIZE) * (trie.bits >> 3)) +
     '\n' +
     'Unused space:'.padEnd(pad, ' ') +
-    (buf.length - (lastNode + TRIE_NODE_SIZE)) +
+    (buffer.length - (lastNode + TRIE_NODE_SIZE)) +
     ' cells, ' +
-    bytes((buf.length - (lastNode + TRIE_NODE_SIZE)) * (trie.bits >> 3)) +
+    bytes((buffer.length - (lastNode + TRIE_NODE_SIZE)) * (trie.bits >> 3)) +
     '\n';
 
   if (process.env.NODE_ENV !== 'production') {
@@ -575,11 +589,11 @@ function _trie_debug(trie, skipBuffer) {
       s +=
         String(ptr).padStart(npad, ' ') +
         ': ' +
-        Array.from(buf.slice(ptr, ptr + TRIE_NODE_SIZE - 1))
+        [...buffer.slice(ptr, ptr + TRIE_NODE_SIZE - 1)]
           .map(n => String(n).padStart(npad, ' '))
           .join(', ') +
         '  ->  ' +
-        String(buf[ptr + TRIE_NODE_SIZE - 1]).padStart(npad, ' ') +
+        String(buffer[ptr + TRIE_NODE_SIZE - 1]).padStart(npad, ' ') +
         '\n';
       ptr += TRIE_NODE_SIZE;
     }
