@@ -20,19 +20,17 @@ function getTerm() {
   return TERM;
 }
 
-function _identity(x) {
-  return x;
-}
+function _doNothing() {}
 
 function SUSH() {
   const prevTerm = TERM;
   setTerm({
-    log: _identity,
-    warn: _identity,
-    error: _identity,
-    trace: _identity,
-    time: _identity,
-    timeEnd: _identity,
+    log: _doNothing,
+    warn: _doNothing,
+    error: _doNothing,
+    trace: _doNothing,
+    time: _doNothing,
+    timeEnd: _doNothing,
   });
   return prevTerm;
 }

@@ -35,12 +35,10 @@ const TRIE_DEFAULT_BITS = undefined;
  * @param {number} [initialLength] Hint to help control memory consumption for large/small tries. This length is in cells, not bytes. (byteLength=length*(bitsize/8))
  * @param {number} [initialBitsize] Hint to set bitsize explicitly. One of: 8 16 32 64
  * @returns {$trie}
- *
- * @nosideeffects
  */
 function trie_create(valuesByIndex, initialLength, initialBitsize) {
   const size = initialLength | 0 || TRIE_INITIAL_SIZE;
-  if (!size) THROW('fixme'); // Blabla it's possible the constant is not yet initialized due to minification. dont initialize a trie in module global space
+  // TODO: if (!size) THROW('fixme'); // Blabla it's possible the constant is not yet initialized due to minification. dont initialize a trie in module global space
   const bits = Math.max(trie_getValueBitsize(size), initialBitsize | 0); // Given bitsize might be lower than max address, ignore it in that case
   const buffer = trie_createBuffer(size, bits);
 
@@ -88,7 +86,7 @@ function trie_createBuffer(size, bits) {
   switch (bits) {
     case TRIE_8_BIT:
       return new Uint8Array(size);
-    case 16:
+    case TRIE_16_BIT:
       return new Uint16Array(size);
     case TRIE_32_BIT:
       return new Uint32Array(size);
@@ -198,8 +196,6 @@ function trie_getValueBitsize(value) {
  * @param {string} key
  * @param {number} value Any unsigned 32bit-1 value
  * @returns {number} previous value, or -1 if there wasn't any
- *
- * @sideeffects
  */
 function trie_add(trie, key, value) {
   if (process.env.NODE_ENV !== 'production') ASSERT(++trie._adds);
@@ -259,8 +255,6 @@ function _trie_add(trie, offset, key, index, len, value) {
  * @param {number} key Assumes an unsigned int
  * @param {number} value Any unsigned 32bit-1 value
  * @returns {number} previous value, or -1 if there wasn't any
- *
- * @sideeffects
  */
 function trie_addNum(trie, key, value) {
   if (process.env.NODE_ENV !== 'production') ASSERT(++trie._adds);
@@ -461,147 +455,147 @@ function trie_hasNum(trie, key) {
  * @param {$trie} trie
  * @param {boolean} [skipBuffer=false]
  * @returns {string}
- *
- * @nosideeffects
  */
 function _trie_debug(trie, skipBuffer) {
-  /* eslint no-extend-native: "off" */
-  const { buffer } = trie;
-
-  const { lastNode } = trie;
-
-  // Patch some es6 stuff for debugging. note: dont do this in prod, it may slow stuff down.
-  if (!String.prototype.padStart) {
-    String.prototype.padStart = function(n, c) {
-      let s = this;
-      if (this.length < n) for (let i = 0; i < n - this.length; ++i) s = c + s;
-      return s;
-    };
-  }
-
-  if (!String.prototype.padEnd) {
-    String.prototype.padEnd = function(n, c) {
-      let s = this;
-      if (this.length < n) for (let i = 0; i < n - this.length; ++i) s += c;
-      return s;
-    };
-  }
-
-  if (!Array.from) {
-    Array.from = function(a) {
-      return [].concat.call(a);
-    };
-  }
-
-  // If one doesnt support them, they probably all dont.
-  if (!Uint8Array.prototype.slice) {
-    Uint8Array.prototype.slice = Array.prototype.slice;
-    Uint16Array.prototype.slice = Array.prototype.slice;
-    Uint32Array.prototype.slice = Array.prototype.slice;
-    Float64Array.prototype.slice = Array.prototype.slice;
-  }
-
-  function bytes(b) {
-    if (b < 1024) return b + ' b';
-    b /= 1024;
-    if (b < 1024) return ~~(b * 100) / 100 + ' kb';
-    b /= 1024;
-    if (b < 1024) return ~~(b * 100) / 100 + ' mb';
-    b /= 1024;
-    return ~~(b * 100) / 100 + ' gb';
-  }
-
-  const pad = 20;
-  const npad = 6;
-  let s =
-    '' +
-    '\n' +
-    '###\n' +
-    'Key count:'.padEnd(pad, ' ') +
-    trie.count +
-    '\n' +
-    'Node count:'.padEnd(pad, ' ') +
-    (lastNode / TRIE_NODE_SIZE + 1) +
-    ' (' +
-    (lastNode / TRIE_NODE_SIZE + 1) / trie.count +
-    ' nodes per key)\n' +
-    'Buffer cell length:'.padEnd(pad, ' ') +
-    buffer.length +
-    '\n' +
-    'Buffer byte length:'.padEnd(pad, ' ') +
-    buffer.byteLength +
-    '\n' +
-    'Bit size:'.padEnd(pad, ' ') +
-    trie.bits +
-    '\n' +
-    'Node len:'.padEnd(pad, ' ') +
-    TRIE_NODE_SIZE +
-    '\n' +
-    'Node size:'.padEnd(pad, ' ') +
-    TRIE_NODE_SIZE +
-    '\n' +
-    'Last Node:'.padEnd(pad, ' ') +
-    lastNode +
-    '\n' +
-    'Used space:'.padEnd(pad, ' ') +
-    (lastNode + TRIE_NODE_SIZE) +
-    ' cells, ' +
-    bytes((lastNode + TRIE_NODE_SIZE) * (trie.bits >> 3)) +
-    '\n' +
-    'Unused space:'.padEnd(pad, ' ') +
-    (buffer.length - (lastNode + TRIE_NODE_SIZE)) +
-    ' cells, ' +
-    bytes((buffer.length - (lastNode + TRIE_NODE_SIZE)) * (trie.bits >> 3)) +
-    '\n';
-
   if (process.env.NODE_ENV !== 'production') {
-    s +=
-      'Mallocs:'.padEnd(pad, ' ') +
-      trie._mallocs +
+    /* eslint no-extend-native: "off" */
+    const { buffer } = trie;
+
+    const { lastNode } = trie;
+
+    // Patch some es6 stuff for debugging. note: dont do this in prod, it may slow stuff down.
+    if (!String.prototype.padStart) {
+      String.prototype.padStart = function(n, c) {
+        let s = this;
+        if (this.length < n) for (let i = 0; i < n - this.length; ++i) s = c + s;
+        return s;
+      };
+    }
+
+    if (!String.prototype.padEnd) {
+      String.prototype.padEnd = function(n, c) {
+        let s = this;
+        if (this.length < n) for (let i = 0; i < n - this.length; ++i) s += c;
+        return s;
+      };
+    }
+
+    if (!Array.from) {
+      Array.from = function(a) {
+        return [].concat.call(a);
+      };
+    }
+
+    // If one doesnt support them, they probably all dont.
+    if (!Uint8Array.prototype.slice) {
+      Uint8Array.prototype.slice = Array.prototype.slice;
+      Uint16Array.prototype.slice = Array.prototype.slice;
+      Uint32Array.prototype.slice = Array.prototype.slice;
+      Float64Array.prototype.slice = Array.prototype.slice;
+    }
+
+    function bytes(b) {
+      if (b < 1024) return b + ' b';
+      b /= 1024;
+      if (b < 1024) return ~~(b * 100) / 100 + ' kb';
+      b /= 1024;
+      if (b < 1024) return ~~(b * 100) / 100 + ' mb';
+      b /= 1024;
+      return ~~(b * 100) / 100 + ' gb';
+    }
+
+    const pad = 20;
+    const npad = 6;
+    let s =
+      '' +
       '\n' +
-      'trie_adds:'.padEnd(pad, ' ') +
-      trie._adds +
+      '###\n' +
+      'Key count:'.padEnd(pad, ' ') +
+      trie.count +
       '\n' +
-      'Avg key distance:'.padEnd(pad, ' ') +
-      trie._addSteps / trie._adds +
+      'Node count:'.padEnd(pad, ' ') +
+      (lastNode / TRIE_NODE_SIZE + 1) +
+      ' (' +
+      (lastNode / TRIE_NODE_SIZE + 1) / trie.count +
+      ' nodes per key)\n' +
+      'Buffer cell length:'.padEnd(pad, ' ') +
+      buffer.length +
       '\n' +
-      'trie_hass:'.padEnd(pad, ' ') +
-      trie._hass +
+      'Buffer byte length:'.padEnd(pad, ' ') +
+      buffer.byteLength +
       '\n' +
-      'trie_gets:'.padEnd(pad, ' ') +
-      trie._gets +
+      'Bit size:'.padEnd(pad, ' ') +
+      trie.bits +
       '\n' +
-      'Avg get distance:'.padEnd(pad, ' ') +
-      trie._getSteps +
-      ' -> ' +
-      trie._getSteps / trie._gets +
+      'Node len:'.padEnd(pad, ' ') +
+      TRIE_NODE_SIZE +
+      '\n' +
+      'Node size:'.padEnd(pad, ' ') +
+      TRIE_NODE_SIZE +
+      '\n' +
+      'Last Node:'.padEnd(pad, ' ') +
+      lastNode +
+      '\n' +
+      'Used space:'.padEnd(pad, ' ') +
+      (lastNode + TRIE_NODE_SIZE) +
+      ' cells, ' +
+      bytes((lastNode + TRIE_NODE_SIZE) * (trie.bits >> 3)) +
+      '\n' +
+      'Unused space:'.padEnd(pad, ' ') +
+      (buffer.length - (lastNode + TRIE_NODE_SIZE)) +
+      ' cells, ' +
+      bytes((buffer.length - (lastNode + TRIE_NODE_SIZE)) * (trie.bits >> 3)) +
       '\n';
-  }
 
-  s += '\n';
-
-  if (!skipBuffer) {
-    s +=
-      'ptr \\ key= 0      1      2      3      4      5      6      7      8      9  ->  value\n\n';
-
-    let ptr = TRIE_ROOT_OFFSET;
-    while (ptr <= lastNode) {
+    if (process.env.NODE_ENV !== 'production') {
       s +=
-        String(ptr).padStart(npad, ' ') +
-        ': ' +
-        [...buffer.slice(ptr, ptr + TRIE_NODE_SIZE - 1)]
+        'Mallocs:'.padEnd(pad, ' ') +
+        trie._mallocs +
+        '\n' +
+        'trie_adds:'.padEnd(pad, ' ') +
+        trie._adds +
+        '\n' +
+        'Avg key distance:'.padEnd(pad, ' ') +
+        trie._addSteps / trie._adds +
+        '\n' +
+        'trie_hass:'.padEnd(pad, ' ') +
+        trie._hass +
+        '\n' +
+        'trie_gets:'.padEnd(pad, ' ') +
+        trie._gets +
+        '\n' +
+        'Avg get distance:'.padEnd(pad, ' ') +
+        trie._getSteps +
+        ' -> ' +
+        trie._getSteps / trie._gets +
+        '\n';
+    }
+
+    s += '\n';
+
+    if (!skipBuffer) {
+      s +=
+        'ptr \\ key= 0      1      2      3      4      5      6      7      8      9  ->  value\n\n';
+
+      let ptr = TRIE_ROOT_OFFSET;
+      while (ptr <= lastNode) {
+        s +=
+          String(ptr).padStart(npad, ' ') +
+          ': ' +
+          [...buffer.slice(ptr, ptr + TRIE_NODE_SIZE - 1)]
           .map(n => String(n).padStart(npad, ' '))
           .join(', ') +
-        '  ->  ' +
-        String(buffer[ptr + TRIE_NODE_SIZE - 1]).padStart(npad, ' ') +
-        '\n';
-      ptr += TRIE_NODE_SIZE;
+          '  ->  ' +
+          String(buffer[ptr + TRIE_NODE_SIZE - 1]).padStart(npad, ' ') +
+          '\n';
+        ptr += TRIE_NODE_SIZE;
+      }
     }
+
+    s += '###\n\n';
+
+    return s;
   }
-
-  s += '###\n\n';
-
-  return s;
 }
 
 export {

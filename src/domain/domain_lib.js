@@ -157,7 +157,7 @@ function domain_str_containsValue(domain, value) {
   ASSERT(value >= SUB, 'value must be >=SUB', value);
   ASSERT(value <= SUP, 'value must be <=SUP', value);
 
-  return domain_str_rangeIndexOf_(domain, value) !== NOT_FOUND;
+  return domain_str_rangeIndexOf(domain, value) !== NOT_FOUND;
 }
 
 /**
@@ -168,7 +168,7 @@ function domain_str_containsValue(domain, value) {
  * @param {number} value
  * @returns {number} >=0 actual index on strdom or NOT_FOUND
  */
-function domain_str_rangeIndexOf_(domain, value) {
+function domain_str_rangeIndexOf(domain, value) {
   ASSERT_STRDOM(domain);
   ASSERT(domain !== '', 'NOT_EMPTY_STR');
   ASSERT(typeof value === 'number', 'A_VALUE_SHOULD_BE_NUMBER');
@@ -441,8 +441,8 @@ function domain_str_simplify(domain) {
   if (domain.length === STR_RANGE_SIZE) return domain_toSmallest(domain);
 
   // Order ranges, then merge overlapping ranges (TODO: can we squash this step together?)
-  domain = _domain_str_quickSortRanges_(domain);
-  domain = _domain_str_mergeOverlappingRanges_(domain);
+  domain = _domain_str_quickSortRanges(domain);
+  domain = _domain_str_mergeOverlappingRanges(domain);
 
   return domain_toSmallest(domain);
 }
@@ -455,7 +455,7 @@ function domain_str_simplify(domain) {
  * @param {$strdom|string} domain MAY not be CSIS yet (that's probably why this function is called in the first place)
  * @returns {$strdom|string} ranges in this string will be ordered but may still overlap
  */
-function _domain_str_quickSortRanges_(domain) {
+function _domain_str_quickSortRanges(domain) {
   ASSERT_STRDOM(domain);
 
   if (!domain) return EMPTY_STR; // Keep return type consistent, dont return EMPTY
@@ -488,12 +488,12 @@ function _domain_str_quickSortRanges_(domain) {
   }
 
   return (
-    String(_domain_str_quickSortRanges_(left)) + // Sort left part, without pivot
+    String(_domain_str_quickSortRanges(left)) + // Sort left part, without pivot
     domain[pivotIndex] + // Include pivot (4 chars)
     domain[pivotIndex + 1] +
     domain[pivotIndex + STR_VALUE_SIZE] +
     domain[pivotIndex + STR_VALUE_SIZE + 1] +
-    _domain_str_quickSortRanges_(right) // Sort right part, without pivot
+    _domain_str_quickSortRanges(right) // Sort right part, without pivot
   );
 }
 
@@ -501,7 +501,7 @@ function _domain_str_quickSortRanges_(domain) {
  * @param {$strdom|string} domain May already be csis but at least all ranges should be ordered and are lo<=hi
  * @returns {$strdom}
  */
-function _domain_str_mergeOverlappingRanges_(domain) {
+function _domain_str_mergeOverlappingRanges(domain) {
   ASSERT_STRDOM(domain);
   if (!domain) return EMPTY_STR; // Prefer strings for return type consistency
 
@@ -2696,12 +2696,6 @@ function _domain_arrToBit(domain, len) {
 
   return out;
 }
-
-function _doNothing() {}
-const _isProduction = process.env.NODE_ENV === 'production';
-const domain_str_rangeIndexOf = _isProduction ? _doNothing : domain_str_rangeIndexOf_;
-const _domain_str_mergeOverlappingRanges = _isProduction ? _doNothing : _domain_str_mergeOverlappingRanges_;
-const _domain_str_quickSortRanges = _isProduction ? _doNothing : _domain_str_quickSortRanges_;
 
 export {
   ARR_FIRST_RANGE_HI,

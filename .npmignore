@@ -1,8 +1,9 @@
-# sources are published as is
+# sources are published as ESM and CommonJS, tests published as-is
 # (readme, changelog, packagejson are always included)
+
 *
 */
 
-!docs/**/*
+!dist/**/*
 !src/**/*
-!tests/**/*
+!tests/lib/**/*
